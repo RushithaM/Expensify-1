@@ -1,6 +1,6 @@
 # Expensify - Expense Tracker App
 
-**Expensify** is a comprehensive expense tracker that allows you to not only track your income and expenses but also categorize them into different groups (e.g., Food, Salary, Entertainment) for better financial management. With detailed analysis, you can easily track spending patterns and make informed decisions to manage your finances effectively.
+**Expensify** is a comprehensive expense tracker that allows you to not only track your income and expenses but also categorize them into different groups (e.g., Food, Salary, Entertainment) for better financial management. With detailed analysis, you can easily track spending patterns on monthly bases and make informed decisions to manage your finances effectively.
 
 ---
 
@@ -14,6 +14,15 @@
 
 ---
 
+## How to Download the App
+
+If you're on **Android** and would like to install the app, you can directly download the **app-release.apk** from the repository.
+- [Download the APK](<https://github.com/sujannani/Expensify/blob/main/app-release.apk>)
+
+Once downloaded, make sure to **enable "Install from Unknown Sources"** in your Android settings to install the APK.
+
+---
+
 ## How to Use
 
 ### 1. **Sign In**
@@ -21,12 +30,15 @@
 
 ### 2. **Set Up Categories**
    - Before adding any transactions, go to the **Categories** tab.
-   - Add categories that best suit your needs, such as **Food**, **Salary**, **Entertainment**, etc.
+   - Tap the **Add Icon** button.
+   - Enter a **new category name** (e.g., Food, Salary, Entertainment).
+   - Select an **emoji** that represents the category (e.g., 🍔 for Food, 💰 for Salary).
+   - This will allow you to organize your transactions into meaningful categories with associated emojis for easy identification.
 
 ### 3. **Adding Transactions**
    - Navigate to the **Add Transaction** tab.
-   - Choose the category (e.g., Food, Salary).
-   - Enter the **amount**, **description** (optional), and select whether it is a **Debit** or **Credit** transaction.
+   - Choose the category you created (e.g., Food, Salary).
+   - Enter the **amount**, **description**, and select whether it is a **Debit** or **Credit** transaction.
    - Tap **Add** to save the transaction.
 
 ### 4. **Viewing Transaction History**
@@ -34,7 +46,7 @@
    - Transactions are organized by month, making it easy to view and track your spending.
 
 ### 5. **Analyzing Your Spending**
-   - In the **Analysis** tab, view the **category-based breakdown** of your expenses and income for the current month.
+   - In the **Analysis** tab, view the **category-based breakdown** of your expenses and income for the each month.
    - For each category (e.g., Food, Salary, Entertainment), see:
      - **Number of Transactions**: The total number of transactions in that category for the month.
      - **Amount Spent or Earned**: The total amount spent (for expenses) or earned (for income) in that category.
