@@ -17,7 +17,7 @@
 ## How to Download the App
 
 If you're on **Android** and would like to install the app, you can directly download the **app-release.apk** from the repository.
--click this [Download the APK](https://github.com/sujannani/Expensify/blob/main/app-release.apk) then click view raw
+- click this [Download the APK](https://github.com/sujannani/Expensify/blob/main/app-release.apk) then click view raw.
 
 Once downloaded, make sure to **enable "Install from Unknown Sources"** in your Android settings to install the APK.
 
