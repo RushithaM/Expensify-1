@@ -35,8 +35,8 @@ class _CategoryAnalysisPageState extends State<CategoryAnalysisPage> {
     while (!stopCallingAnalysis) {
       var resp = await transPro.getCategoryMonthlyTransactions(
           prefs!.getString('id')!,
-          generateDate(catYear, catMonth),
-          generateDate(catYear, catMonth + 1));
+          generateDate(catYear, catMonth, 1),
+          generateDate(catYear, catMonth + 1, 1));
       if (resp['message'] == "No more transactions available") {
         stopCallingAnalysis = true;
         if (mounted)
@@ -176,7 +176,9 @@ class _CategoryAnalysisPageState extends State<CategoryAnalysisPage> {
             Navigator.push(context, MaterialPageRoute(builder: (context) {
               return AddCategory(
                   category: Category(
+                      type: "",
                       active: true,
+                      budget: 0.0,
                       categoryName: "",
                       emoji: "",
                       id: "",

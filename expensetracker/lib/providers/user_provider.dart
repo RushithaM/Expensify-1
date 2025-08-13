@@ -18,6 +18,8 @@ class UserProvider {
         await prefs!.setString('id', resp['user']['id']);
         await prefs!
             .setString('amount', resp['user']['totalAmount'].toString());
+        await prefs!.setString('createdAt', resp['user']['createdAt']);
+        createdAtDateString = prefs!.getString("createdAt");
         return {'message': 'success'};
       } else {
         return {'message': resp['message']};
@@ -29,8 +31,7 @@ class UserProvider {
 
   Future<Map<String, dynamic>> signupUser(
       String name, String email, String password) async {
-    final url = Uri.parse(
-        '${bUrl}/users/signup');
+    final url = Uri.parse('${bUrl}/users/signup');
     final body =
         jsonEncode({"email": email, "password": password, "name": name});
     try {
@@ -42,6 +43,8 @@ class UserProvider {
         await prefs!.setString('name', name);
         await prefs!.setString('id', resp['id']);
         await prefs!.setString('amount', '0');
+        await prefs!.setString('createdAt', resp['createdAt']);
+        createdAtDateString = prefs!.getString("createdAt");
         return {'message': 'success'};
       } else {
         return {'message': resp['message']};
@@ -53,8 +56,7 @@ class UserProvider {
 
   Future<Map<String, dynamic>> updateUser(
       String name, String email, String user_id) async {
-    final url = Uri.parse(
-        '${bUrl}/users/edit_profile');
+    final url = Uri.parse('${bUrl}/users/edit_profile');
     final body = jsonEncode({"email": email, "name": name, 'user_id': user_id});
     try {
       final response = await http.post(url, headers: headers, body: body);

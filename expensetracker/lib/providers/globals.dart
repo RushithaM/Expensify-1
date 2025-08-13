@@ -13,6 +13,8 @@ Map<String, String> headers = {
   'Content-Type': 'application/json',
 };
 
+DateFormat stringDateFormat = DateFormat('dd/MM/yyyy');
+
 bool isValidEmail(String email) {
   final RegExp emailRegex = RegExp(
     r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
@@ -20,8 +22,8 @@ bool isValidEmail(String email) {
   return emailRegex.hasMatch(email);
 }
 
-String generateDate(int year, int month) {
-  DateTime dateTime = DateTime(year, month, 1);
+String generateDate(int year, int month, int day) {
+  DateTime dateTime = DateTime(year, month, day);
   Duration offset = dateTime.timeZoneOffset;
   int offsetHours = offset.inHours;
   int offsetMinutes = offset.inMinutes.remainder(60);
@@ -36,7 +38,7 @@ String generateDate(int year, int month) {
 String formatDateTime(String dateTimeString) {
   try {
     DateTime dateTime = DateTime.parse(dateTimeString);
-    String formattedDate = DateFormat('EEE d, hh:mm a').format(dateTime);
+    String formattedDate = DateFormat('EEE d, MMMM').format(dateTime);
     return formattedDate;
   } catch (e) {
     return dateTimeString;
@@ -108,6 +110,19 @@ double getDebitCost(List<CategoryTransaction> categoryTransaction) {
   return debitCost;
 }
 
+int daysInMonth(DateTime date) {
+  final firstDayThisMonth = DateTime(date.year, date.month, 1);
+  final firstDayNextMonth = DateTime(date.year, date.month + 1, 1);
+  return firstDayNextMonth.difference(firstDayThisMonth).inDays;
+}
+
+int getRemainingDaysInMonth(int year, int month, int day) {
+  DateTime today = DateTime(year, month, day);
+  DateTime nextMonth =
+      (month < 12) ? DateTime(year, month + 1, 1) : DateTime(year + 1, 1, 1);
+  return nextMonth.difference(today).inDays;
+}
+
 CategoryProvider catPro = CategoryProvider();
 TransactionsProvider transPro = TransactionsProvider();
 UserProvider userPro = UserProvider();
@@ -116,21 +131,33 @@ bool areRecentFetched = false;
 int month = DateTime.now().month;
 int year = DateTime.now().year;
 
+int budgetMonth = DateTime.now().month;
+int budgetYear = DateTime.now().year;
+
 int catMonth = DateTime.now().month;
 int catYear = DateTime.now().year;
 double totalAmount = 0;
+String? createdAtDateString;
 
 void initGlobals() {
   year = DateTime.now().year;
   month = DateTime.now().month;
   catYear = DateTime.now().year;
   catMonth = DateTime.now().month;
+  budgetMonth = DateTime.now().month;
+  budgetYear = DateTime.now().year;
   areRecentFetched = false;
   totalAmount = 0;
 }
 
 Category emptyCategory = Category(
-    categoryName: "Category", emoji: "💰", active: true, userId: "", id: "");
+    type: "",
+    categoryName: "Category",
+    emoji: "💰",
+    active: true,
+    userId: "",
+    id: "",
+    budget: 0);
 
 Future<String> checkServerStatus(String serverUrl) async {
   try {

@@ -7,6 +7,7 @@ Color lightAppColor = Color(0xFFF2F7FF);
 Color lightColor = Color(0xFFE0E4F5);
 Color creditColor = Color(0xFF4CAF50);
 Color debitColor = Color(0xFFF44336);
+Color textColor = Color(0xFF3C3C3C);
 
 Widget AppButton(String title) {
   return Container(

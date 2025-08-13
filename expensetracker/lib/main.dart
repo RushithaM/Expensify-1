@@ -11,6 +11,7 @@ Future<void> main() async {
     statusBarIconBrightness: Brightness.light,
   ));
   prefs = await SharedPreferences.getInstance();
+  createdAtDateString = prefs!.getString("createdAt");
   runApp(const MyApp());
 }
 

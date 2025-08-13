@@ -1,5 +1,6 @@
 import 'package:expensetracker/main.dart';
 import 'package:expensetracker/providers/globals.dart';
+import 'package:expensetracker/screens/calendar/calendar.dart';
 import 'package:expensetracker/screens/profile/profile.dart';
 import 'package:expensetracker/styles/styles.dart';
 import 'package:expensetracker/widgets/home/summaryCard.dart';
@@ -53,7 +54,7 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> getCurrentMonthTransactions() async {
     await transPro.getMonthlyTransactions(prefs!.getString('id')!,
-        generateDate(year, month), generateDate(year, month + 1));
+        generateDate(year, month, 1), generateDate(year, month + 1, 1));
     month -= 1;
     if (month == 0) {
       month = 12;
@@ -76,7 +77,7 @@ class _HomePageState extends State<HomePage> {
   Future<void> getRecentTransactions() async {
     DateTime now = DateTime.now();
     await transPro.getRecentTransactions(
-        prefs!.getString('id')!, generateDate(now.year, now.month));
+        prefs!.getString('id')!, generateDate(now.year, now.month, 1));
     if (mounted) setState(() {});
   }
 
@@ -113,8 +114,16 @@ class _HomePageState extends State<HomePage> {
                 ),
                 Row(
                   children: [
-                    Icon(Icons.notifications_outlined,
-                        color: Colors.white, size: 30),
+                    InkWell(
+                      onTap: () {
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => CalendarPage()));
+                      },
+                      child: Icon(Icons.calendar_month_outlined,
+                          color: Colors.white, size: 30),
+                    ),
                     SizedBox(width: 12),
                     InkWell(
                         onTap: () {

@@ -48,12 +48,38 @@ class _CategoryCardState extends State<CategoryCard> {
                         )),
                   ),
                   SizedBox(width: 12),
-                  Text(widget.category.categoryName,
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Color(0xFF3C3C3C),
-                        fontWeight: FontWeight.w500,
-                      )),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(widget.category.categoryName,
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Color(0xFF3C3C3C),
+                            fontWeight: FontWeight.w500,
+                          )),
+                      SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Text(
+                            "Budget: ",
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Color(0xFF3C3C3C),
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                          Text(
+                            "₹${widget.category.budget.toString()}",
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: appColor,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ],
               ),
               PopupMenuButton<String>(

@@ -163,11 +163,13 @@ class _AllCategoriesState extends State<AllCategories> {
             await Navigator.push(context, MaterialPageRoute(builder: (context) {
               return AddCategory(
                 category: Category(
+                    type: "",
                     active: true,
                     categoryName: "",
                     emoji: "",
                     id: "",
-                    userId: ""),
+                    userId: "",
+                    budget: 0.0),
                 isEdit: false,
               );
             }));

@@ -7,6 +7,7 @@ import 'package:expensetracker/widgets/errorText.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 
 // ignore: must_be_immutable
 class AddTransactionPage extends StatefulWidget {
@@ -31,30 +32,42 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
   Category? selectedCategory;
   TextEditingController amountController = TextEditingController();
   TextEditingController descriptionController = TextEditingController();
+  TextEditingController dateController = TextEditingController();
+  FocusNode dateFocus = FocusNode();
   FocusNode amountFocus = FocusNode();
   FocusNode descriptionFocus = FocusNode();
   String categoryError = "";
   String typeError = "";
   String amountError = "";
   String descriptionError = "";
+  String dateError = "";
   bool isLoading = false;
+
+  String? createdAtString;
 
   var resp;
 
   @override
   void initState() {
     super.initState();
+    setCreatedAtDate();
     if (widget.isEdit) {
       selectedCategory = catPro.categories
           .firstWhere((element) => element.id == widget.transaction.categoryId);
       amountController.text = widget.transaction.amount.toString();
       descriptionController.text = widget.transaction.description;
+      dateController.text =
+          DateFormat('dd/MM/yyyy').format(widget.transaction.date);
       if (widget.transaction.type == "debit") {
         _selectedOption = Options.option1;
       } else {
         _selectedOption = Options.option2;
       }
     }
+  }
+
+  void setCreatedAtDate() async {
+    createdAtString = await prefs!.getString("createdAt");
   }
 
   @override
@@ -99,7 +112,6 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                       color: Color(0xFF3C3C3C),
                       fontWeight: FontWeight.w500,
                     )),
-
                 SizedBox(height: 10),
                 InkWell(
                   onTap: () {
@@ -140,11 +152,13 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                                                         AddCategory(
                                                           isEdit: false,
                                                           category: Category(
+                                                              type: "",
                                                               active: true,
                                                               categoryName: "",
                                                               id: "",
                                                               userId: "",
-                                                              emoji: ""),
+                                                              emoji: "",
+                                                              budget: 0.0),
                                                         )));
                                             if (mounted) setState(() {});
                                           },
@@ -167,7 +181,8 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                           if (newValue != null) {
                             selectedCategory = catPro.categories.firstWhere(
                                 (category) =>
-                                    category.categoryName == newValue);
+                                    category.categoryName == newValue &&
+                                    category.active);
                           }
                           if (selectedCategory != null) {
                             if (mounted)
@@ -275,42 +290,65 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                       )
                     ]),
                 ErrorText(typeError),
-                // SizedBox(height: 20),
-                // Text("Date",
-                //     style: TextStyle(
-                //       fontSize: 16,
-                //       color: Color(0xFF3C3C3C),
-                //       fontWeight: FontWeight.w500,
-                //     )),
-                // SizedBox(height: 10),
-                // Container(
-                //   color: lightAppColor,
-                //   child: TextFormField(
-                //     onTap: () async {
-                //       DateTime? date = await showDatePicker(
-                //         context: context,
-                //         initialDate: DateTime.now(),
-                //         firstDate: DateTime(2000),
-                //         lastDate: DateTime(2025),
-                //       );
-                //       if (date != null)
-                //         dateController.text = date.toString().substring(0, 10);
-                //     },
-                //     readOnly: true,
-                //     controller: dateController,
-                //     decoration: InputDecoration(
-                //       hintText: "Select Date",
-                //       border: OutlineInputBorder(
-                //         borderSide: BorderSide(
-                //           color: Colors.black,
-                //           width: 1,
-                //         ),
-                //         borderRadius: BorderRadius.circular(8),
-                //       ),
-                //       suffixIcon: Icon(Icons.calendar_today),
-                //     ),
-                //   ),
-                // ),
+                SizedBox(height: 20),
+                Text("Date",
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Color(0xFF3C3C3C),
+                      fontWeight: FontWeight.w500,
+                    )),
+                SizedBox(height: 10),
+                Container(
+                  child: TextFormField(
+                    onTap: () async {
+                      if (dateError.length > 0) {
+                        if (mounted)
+                          setState(() {
+                            dateError = "";
+                          });
+                      }
+                      DateTime createdAtDate = DateTime.parse(createdAtString!);
+                      DateTime? date = await showDatePicker(
+                        context: context,
+                        initialDate: DateTime.now(),
+                        firstDate: createdAtDate,
+                        lastDate: DateTime(DateTime.now().year,
+                            DateTime.now().month, DateTime.now().day),
+                        builder: (BuildContext context, Widget? child) {
+                          return Theme(
+                            data: Theme.of(context).copyWith(
+                              colorScheme: ColorScheme.light(
+                                primary: appColor,
+                                onPrimary: Colors.white,
+                                onSurface: Colors.black,
+                              ),
+                            ),
+                            child: child!,
+                          );
+                        },
+                      );
+                      if (date != null) {
+                        final formattedDate =
+                            DateFormat('dd/MM/yyyy').format(date);
+                        dateController.text = formattedDate;
+                      }
+                    },
+                    readOnly: true,
+                    controller: dateController,
+                    decoration: InputDecoration(
+                      hintText: "Select Date",
+                      border: OutlineInputBorder(
+                        borderSide: BorderSide(
+                          color: Colors.black,
+                          width: 1,
+                        ),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      suffixIcon: Icon(Icons.calendar_today),
+                    ),
+                  ),
+                ),
+                ErrorText(dateError),
                 SizedBox(height: 20),
                 Text("Amount",
                     style: TextStyle(
@@ -405,6 +443,13 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                                   });
                                 return;
                               }
+                              if (dateController.text.trim().length == 0) {
+                                if (mounted)
+                                  setState(() {
+                                    dateError = "Select date";
+                                  });
+                                return;
+                              }
                               if (amountController.text.trim().length == 0 ||
                                   double.parse(amountController.text.trim()) ==
                                       0) {
@@ -453,7 +498,9 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                                     descriptionController.text.trim(),
                                     (_selectedOption == Options.option1)
                                         ? "debit"
-                                        : 'credit');
+                                        : 'credit',
+                                    DateFormat('dd/MM/yyyy')
+                                        .parse(dateController.text.trim()));
                               } else {
                                 resp = await transPro.editTransaction(
                                     widget.transaction.id,
@@ -464,6 +511,8 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                                     (_selectedOption == Options.option1)
                                         ? "debit"
                                         : 'credit',
+                                    DateFormat('dd/MM/yyyy')
+                                        .parse(dateController.text.trim()),
                                     widget.i,
                                     widget.j);
                               }
@@ -483,6 +532,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                                 descriptionController.text = "";
                                 selectedCategory = null;
                                 _selectedOption = null;
+                                dateController.text = "";
                               } else {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(

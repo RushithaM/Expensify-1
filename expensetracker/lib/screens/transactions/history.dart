@@ -32,7 +32,7 @@ class _HistoryPageState extends State<HistoryPage> {
       });
     while (!stopCalling) {
       var resp = await transPro.getMonthlyTransactions(prefs!.getString('id')!,
-          generateDate(year, month), generateDate(year, month + 1));
+          generateDate(year, month, 1), generateDate(year, month + 1, 1));
       if (resp['message'] == "No more transactions available") {
         stopCalling = true;
         if (mounted)

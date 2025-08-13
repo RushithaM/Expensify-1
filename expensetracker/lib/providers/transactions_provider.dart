@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:expensetracker/main.dart';
 import 'package:expensetracker/models/category_monthly_transactions_model.dart';
+import 'package:expensetracker/models/monthly_budget_details.dart';
 import 'package:expensetracker/models/transaction_model.dart';
 import 'package:expensetracker/providers/globals.dart';
 import 'package:http/http.dart' as http;
@@ -9,20 +10,23 @@ class TransactionsProvider {
   List<Transaction> recentTransactions = [];
   List<MonthlyTransactions> monthlyTransactions = [];
   List<CategoryMonthlyTransactions> categoryMonthlyTransactions = [];
+  List<MonthlyBudgetDetails> monthlyBudgetDetails = [];
 
   Future<Map<String, dynamic>> addTransaction(
       String user_id,
       String category_id,
       double amount,
       String description,
-      String type) async {
+      String type,
+      DateTime date) async {
     final url = Uri.parse('${bUrl}/transactions/add_transaction');
     final body = jsonEncode({
       "user_id": user_id,
       'category_id': category_id,
       'amount': amount,
       "description": description,
-      "type": type
+      "type": type,
+      "date": generateDate(date.year, date.month, date.day),
     });
     try {
       final response = await http.post(url, headers: headers, body: body);
@@ -41,61 +45,87 @@ class TransactionsProvider {
             amount: amount,
             description: description,
             type: type,
-            date: DateTime.now());
+            date: date);
 
         //recent update
         transPro.recentTransactions.insert(0, newTransaction);
 
         //monthly update
-        if (transPro.monthlyTransactions.first.date
-                    .add(DateTime.now().timeZoneOffset)
-                    .month ==
-                DateTime.now().month &&
-            transPro.monthlyTransactions.first.date
-                    .add(DateTime.now().timeZoneOffset)
-                    .year ==
-                DateTime.now().year) {
-          transPro.monthlyTransactions.first.transactions.add(newTransaction);
+        if (transPro.monthlyTransactions.any((mt) =>
+            mt.date.add(DateTime.now().timeZoneOffset).month == date.month &&
+            mt.date.add(DateTime.now().timeZoneOffset).year == date.year)) {
+          transPro.monthlyTransactions
+              .firstWhere((mt) =>
+                  mt.date.add(DateTime.now().timeZoneOffset).month ==
+                      date.month &&
+                  mt.date.add(DateTime.now().timeZoneOffset).year == date.year)
+              .transactions
+              .add(newTransaction);
         } else {
           transPro.monthlyTransactions.add(MonthlyTransactions(
-              date: DateTime.now(), transactions: [newTransaction]));
+              date: DateTime(date.year, date.month, 1),
+              transactions: [newTransaction]));
         }
 
         //monthly caterogy data update
         if (transPro.categoryMonthlyTransactions.isEmpty) {
           return {'message': 'success'};
         }
-        if (transPro.categoryMonthlyTransactions.first.date
-                    .add(DateTime.now().timeZoneOffset)
-                    .month ==
-                DateTime.now().month &&
-            transPro.categoryMonthlyTransactions.first.date
-                    .add(DateTime.now().timeZoneOffset)
-                    .year ==
-                DateTime.now().year) {
-          bool exist = transPro
-              .categoryMonthlyTransactions.first.categoryTransactions
+        if (transPro.categoryMonthlyTransactions.any((cmt) =>
+            cmt.date.add(DateTime.now().timeZoneOffset).month == date.month &&
+            cmt.date.add(DateTime.now().timeZoneOffset).year == date.year)) {
+          CategoryMonthlyTransactions cmts =
+              transPro.categoryMonthlyTransactions.firstWhere((cmt) =>
+                  cmt.date.add(DateTime.now().timeZoneOffset).month ==
+                      date.month &&
+                  cmt.date.add(DateTime.now().timeZoneOffset).year ==
+                      date.year);
+          bool exist = cmts.categoryTransactions
               .any((element) => element.id == category_id);
           if (exist) {
-            transPro.categoryMonthlyTransactions.first.categoryTransactions
+            transPro.categoryMonthlyTransactions
+                .firstWhere((element) =>
+                    element.date.add(DateTime.now().timeZoneOffset).month ==
+                        date.month &&
+                    element.date.add(DateTime.now().timeZoneOffset).year ==
+                        date.year)
+                .categoryTransactions
                 .firstWhere((element) => element.id == category_id)
                 .count += 1;
             if (type == "debit") {
-              transPro.categoryMonthlyTransactions.first.categoryTransactions
+              transPro.categoryMonthlyTransactions
+                  .firstWhere((element) =>
+                      element.date.add(DateTime.now().timeZoneOffset).month ==
+                          date.month &&
+                      element.date.add(DateTime.now().timeZoneOffset).year ==
+                          date.year)
+                  .categoryTransactions
                   .firstWhere((element) => element.id == category_id)
                   .totalCost -= amount;
             } else {
-              transPro.categoryMonthlyTransactions.first.categoryTransactions
+              transPro.categoryMonthlyTransactions
+                  .firstWhere((element) =>
+                      element.date.add(DateTime.now().timeZoneOffset).month ==
+                          date.month &&
+                      element.date.add(DateTime.now().timeZoneOffset).year ==
+                          date.year)
+                  .categoryTransactions
                   .firstWhere((element) => element.id == category_id)
                   .totalCost += amount;
             }
           } else {
-            transPro.categoryMonthlyTransactions.first.categoryTransactions
+            transPro.categoryMonthlyTransactions
+                .firstWhere((element) =>
+                    element.date.add(DateTime.now().timeZoneOffset).month ==
+                        date.month &&
+                    element.date.add(DateTime.now().timeZoneOffset).year ==
+                        date.year)
+                .categoryTransactions
                 .add(CategoryTransaction(
-              id: category_id,
-              count: 1,
-              totalCost: (type == "credit") ? amount : -amount,
-            ));
+                  id: category_id,
+                  count: 1,
+                  totalCost: (type == "credit") ? amount : -amount,
+                ));
           }
         } else {
           transPro.categoryMonthlyTransactions.add(CategoryMonthlyTransactions(
@@ -194,6 +224,37 @@ class TransactionsProvider {
     }
   }
 
+  Future<Map<String, dynamic>> getMonthlyBudgetDetails(String user_id,
+      String start_date, String end_date, String current_date) async {
+    final url = Uri.parse('${bUrl}/transactions/get_budget_details');
+    final body = jsonEncode({
+      "user_id": user_id,
+      'start_date': start_date,
+      'end_date': end_date,
+      'current_date': current_date
+    });
+    try {
+      final response = await http.post(url, headers: headers, body: body);
+      final resp = jsonDecode(response.body);
+      if (resp['message'] == "success") {
+        MonthlyBudgetDetails monthlyBudgetDetails =
+            MonthlyBudgetDetailsModel.fromJson(resp).monthlyBudgetDetails;
+        if (transPro.monthlyBudgetDetails
+            .any((element) => element.date == monthlyBudgetDetails.date)) {
+          return {'message': 'success'};
+        }
+        transPro.monthlyBudgetDetails.add(monthlyBudgetDetails);
+        return {'message': 'success'};
+      } else if (resp['message'] == "No more transactions available") {
+        return {'message': 'No more transactions available'};
+      } else {
+        return {'message': resp['message']};
+      }
+    } catch (e) {
+      return {'error': 'Something went wrong: $e', 'message': 'not ok'};
+    }
+  }
+
   Future<Map<String, dynamic>> deleteTransaction(
       Transaction transaction, int i, int j, DateTime date) async {
     final url = Uri.parse('${bUrl}/transactions/delete_transaction');
@@ -226,24 +287,24 @@ class TransactionsProvider {
         DateTime now = DateTime.now();
         transPro.categoryMonthlyTransactions
             .firstWhere((element) =>
-                element.date.add(now.timeZoneOffset).month == now.month &&
-                element.date.add(now.timeZoneOffset).year == now.year)
+                element.date.add(now.timeZoneOffset).month == date.month &&
+                element.date.add(now.timeZoneOffset).year == date.year)
             .categoryTransactions
             .firstWhere((element) => element.id == transaction.categoryId)
             .count -= 1;
         if (transaction.type == "debit") {
           transPro.categoryMonthlyTransactions
               .firstWhere((element) =>
-                  element.date.add(now.timeZoneOffset).month == now.month &&
-                  element.date.add(now.timeZoneOffset).year == now.year)
+                  element.date.add(now.timeZoneOffset).month == date.month &&
+                  element.date.add(now.timeZoneOffset).year == date.year)
               .categoryTransactions
               .firstWhere((element) => element.id == transaction.categoryId)
               .totalCost += transaction.amount;
         } else {
           transPro.categoryMonthlyTransactions
               .firstWhere((element) =>
-                  element.date.add(now.timeZoneOffset).month == now.month &&
-                  element.date.add(now.timeZoneOffset).year == now.year)
+                  element.date.add(now.timeZoneOffset).month == date.month &&
+                  element.date.add(now.timeZoneOffset).year == date.year)
               .categoryTransactions
               .firstWhere((element) => element.id == transaction.categoryId)
               .totalCost -= transaction.amount;
@@ -264,6 +325,7 @@ class TransactionsProvider {
       String user_id,
       String description,
       String type,
+      DateTime date,
       int i,
       int j) async {
     final url = Uri.parse('${bUrl}/transactions/edit_transaction');
@@ -273,7 +335,8 @@ class TransactionsProvider {
       'amount': amount,
       "description": description,
       "user_id": user_id,
-      "type": type
+      "type": type,
+      "date": generateDate(date.year, date.month, date.day),
     });
     try {
       final response = await http.post(url, headers: headers, body: body);
@@ -307,14 +370,42 @@ class TransactionsProvider {
           date: transPro.monthlyTransactions[i].transactions[j].date,
         );
 
+        DateTime now = DateTime.now();
         //monthly transactions update
-        transPro.monthlyTransactions[i].transactions[j].amount = amount;
-        transPro.monthlyTransactions[i].transactions[j].description =
-            description;
-        transPro.monthlyTransactions[i].transactions[j].categoryId =
-            category_id;
-        transPro.monthlyTransactions[i].transactions[j].type = type;
-        transPro.monthlyTransactions[i].transactions[j].date = DateTime.now();
+        if (date.year == oldTransaction.date.add(now.timeZoneOffset).year &&
+            date.month == oldTransaction.date.add(now.timeZoneOffset).month) {
+          transPro.monthlyTransactions[i].transactions[j].amount = amount;
+          transPro.monthlyTransactions[i].transactions[j].description =
+              description;
+          transPro.monthlyTransactions[i].transactions[j].categoryId =
+              category_id;
+          transPro.monthlyTransactions[i].transactions[j].type = type;
+          transPro.monthlyTransactions[i].transactions[j].date = date;
+        } else {
+          transPro.monthlyTransactions[i].transactions
+              .removeWhere((t) => t.id == oldTransaction.id);
+          Transaction newT = Transaction(
+              id: oldTransaction.id,
+              amount: amount,
+              categoryId: category_id,
+              date: date,
+              description: description,
+              type: type,
+              userId: user_id);
+          if (transPro.monthlyTransactions.any((mt) =>
+              (mt.date.add(now.timeZoneOffset).year == date.year &&
+                  mt.date.add(now.timeZoneOffset).month == date.month))) {
+            transPro.monthlyTransactions
+                .firstWhere((mt) =>
+                    (mt.date.add(now.timeZoneOffset).year == date.year &&
+                        mt.date.add(now.timeZoneOffset).month == date.month))
+                .transactions
+                .add(newT);
+          } else {
+            transPro.monthlyTransactions
+                .add(MonthlyTransactions(date: date, transactions: [newT]));
+          }
+        }
 
         //recent transactions update
         if (transPro.recentTransactions
@@ -333,19 +424,21 @@ class TransactionsProvider {
               .type = type;
           transPro.recentTransactions
               .firstWhere((element) => element.id == transaction_id)
-              .date = DateTime.now();
+              .date = date;
         }
 
         //monthly category data update
         if (transPro.categoryMonthlyTransactions.isEmpty) {
           return {'message': 'success'};
         }
-        DateTime now = DateTime.now();
+
         //correcting
         transPro.categoryMonthlyTransactions
             .firstWhere((element) =>
-                element.date.add(now.timeZoneOffset).month == now.month &&
-                element.date.add(now.timeZoneOffset).year == now.year)
+                element.date.add(now.timeZoneOffset).month ==
+                    oldTransaction.date.add(now.timeZoneOffset).month &&
+                element.date.add(now.timeZoneOffset).year ==
+                    oldTransaction.date.add(now.timeZoneOffset).year)
             .categoryTransactions
             .firstWhere((element) => element.id == oldTransaction.categoryId)
             .totalCost += (oldTransaction.type ==
@@ -354,36 +447,37 @@ class TransactionsProvider {
             : -oldTransaction.amount;
         transPro.categoryMonthlyTransactions
             .firstWhere((element) =>
-                element.date.add(now.timeZoneOffset).month == now.month &&
-                element.date.add(now.timeZoneOffset).year == now.year)
+                element.date.add(now.timeZoneOffset).month ==
+                    oldTransaction.date.add(now.timeZoneOffset).month &&
+                element.date.add(now.timeZoneOffset).year ==
+                    oldTransaction.date.add(now.timeZoneOffset).year)
             .categoryTransactions
             .firstWhere((element) => element.id == oldTransaction.categoryId)
             .count -= 1;
         //updating
         if (!transPro.categoryMonthlyTransactions.any((element) =>
-            element.date.add(now.timeZoneOffset).month == now.month &&
-            element.date.add(now.timeZoneOffset).year == now.year)) {
-          transPro.categoryMonthlyTransactions.add(CategoryMonthlyTransactions(
-              date: DateTime.now(),
-              categoryTransactions: [
-                CategoryTransaction(
-                  id: category_id,
-                  count: 1,
-                  totalCost: (type == "credit") ? amount : -amount,
-                )
-              ]));
+            element.date.add(now.timeZoneOffset).month == date.month &&
+            element.date.add(now.timeZoneOffset).year == date.year)) {
+          transPro.categoryMonthlyTransactions.add(
+              CategoryMonthlyTransactions(date: date, categoryTransactions: [
+            CategoryTransaction(
+              id: category_id,
+              count: 1,
+              totalCost: (type == "credit") ? amount : -amount,
+            )
+          ]));
           return {'message': 'success'};
         }
         if (!transPro.categoryMonthlyTransactions
             .firstWhere((element) =>
-                element.date.add(now.timeZoneOffset).month == now.month &&
-                element.date.add(now.timeZoneOffset).year == now.year)
+                element.date.add(now.timeZoneOffset).month == date.month &&
+                element.date.add(now.timeZoneOffset).year == date.year)
             .categoryTransactions
             .any((element) => element.id == category_id)) {
           transPro.categoryMonthlyTransactions
               .firstWhere((element) =>
-                  element.date.add(now.timeZoneOffset).month == now.month &&
-                  element.date.add(now.timeZoneOffset).year == now.year)
+                  element.date.add(now.timeZoneOffset).month == date.month &&
+                  element.date.add(now.timeZoneOffset).year == date.year)
               .categoryTransactions
               .add(CategoryTransaction(
                 id: category_id,
@@ -392,17 +486,32 @@ class TransactionsProvider {
               ));
           return {'message': 'success'};
         }
+        if (!transPro.categoryMonthlyTransactions
+            .firstWhere((element) =>
+                element.date.add(now.timeZoneOffset).month == date.month &&
+                element.date.add(now.timeZoneOffset).year == date.year)
+            .categoryTransactions
+            .any((element) => element.id == category_id)) {
+          transPro.categoryMonthlyTransactions
+              .firstWhere((element) =>
+                  element.date.add(now.timeZoneOffset).month == date.month &&
+                  element.date.add(now.timeZoneOffset).year == date.year)
+              .categoryTransactions
+              .add(CategoryTransaction(
+                  id: category_id, count: 1, totalCost: amount));
+          return {'message': 'success'};
+        }
         transPro.categoryMonthlyTransactions
             .firstWhere((element) =>
-                element.date.add(now.timeZoneOffset).month == now.month &&
-                element.date.add(now.timeZoneOffset).year == now.year)
+                element.date.add(now.timeZoneOffset).month == date.month &&
+                element.date.add(now.timeZoneOffset).year == date.year)
             .categoryTransactions
             .firstWhere((element) => element.id == category_id)
             .totalCost += (type == "debit") ? -amount : amount;
         transPro.categoryMonthlyTransactions
             .firstWhere((element) =>
-                element.date.add(now.timeZoneOffset).month == now.month &&
-                element.date.add(now.timeZoneOffset).year == now.year)
+                element.date.add(now.timeZoneOffset).month == date.month &&
+                element.date.add(now.timeZoneOffset).year == date.year)
             .categoryTransactions
             .firstWhere((element) => element.id == category_id)
             .count += 1;

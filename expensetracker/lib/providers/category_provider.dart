@@ -30,19 +30,26 @@ class CategoryProvider {
     }
   }
 
-  Future<Map<String, dynamic>> addcategory(
-      String user_id, String category_name, String emoji) async {
+  Future<Map<String, dynamic>> addcategory(String user_id, String category_name,
+      String emoji, double budget, String type) async {
     final url = Uri.parse('${bUrl}/category/add_category');
-    final body = jsonEncode(
-        {"user_id": user_id, "category_name": category_name, 'emoji': emoji});
+    final body = jsonEncode({
+      "user_id": user_id,
+      "category_name": category_name,
+      'emoji': emoji,
+      'budget': budget,
+      'type': type
+    });
     try {
       final response = await http.post(url, headers: headers, body: body);
       final resp = jsonDecode(response.body);
       if (resp['message'] == "success") {
         catPro.categories.add(Category(
             id: resp['category_id'],
+            budget: budget,
             active: true,
             categoryName: category_name,
+            type: type,
             emoji: emoji,
             userId: user_id));
         return {'message': 'success'};
@@ -61,7 +68,9 @@ class CategoryProvider {
       final response = await http.post(url, headers: headers, body: body);
       final resp = jsonDecode(response.body);
       if (resp['message'] == "success") {
-        catPro.categories.firstWhere((element) => element.id == category_id).active=false;
+        catPro.categories
+            .firstWhere((element) => element.id == category_id)
+            .active = false;
         return {'message': 'success'};
       } else {
         return {'message': resp['message']};
@@ -71,14 +80,21 @@ class CategoryProvider {
     }
   }
 
-  Future<Map<String, dynamic>> editcategory(String category_id,
-      String category_name, String emoji, String user_id) async {
+  Future<Map<String, dynamic>> editcategory(
+      String category_id,
+      String category_name,
+      String emoji,
+      String user_id,
+      String type,
+      double budget) async {
     final url = Uri.parse('${bUrl}/category/edit_category');
     final body = jsonEncode({
       "category_id": category_id,
       "category_name": category_name,
       'emoji': emoji,
-      'user_id': user_id
+      'user_id': user_id,
+      'type': type,
+      'budget': budget
     });
     try {
       final response = await http.post(url, headers: headers, body: body);
@@ -90,6 +106,12 @@ class CategoryProvider {
         catPro.categories
             .firstWhere((element) => element.id == category_id)
             .emoji = emoji;
+        catPro.categories
+            .firstWhere((element) => element.id == category_id)
+            .budget = budget;
+        catPro.categories
+            .firstWhere((element) => element.id == category_id)
+            .type = type;
         return {'message': 'success'};
       } else {
         return {'message': resp['message']};
