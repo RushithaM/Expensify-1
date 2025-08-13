@@ -43,7 +43,8 @@ class _CategoryAnalysisCardState extends State<BudgetCard> {
                   widget.date.year, widget.date.month, widget.date.day))
           .toStringAsFixed(2),
     );
-    budgetForToday = budgetLeftPerDay + budgetSpentToday;
+    budgetForToday =
+        double.parse((budgetLeftPerDay + budgetSpentToday).toStringAsFixed(2));
     if (widget.category.categoryName == "Food") {
       print(budgetForToday);
       print(budgetLeftPerDay);
@@ -160,13 +161,13 @@ class _CategoryAnalysisCardState extends State<BudgetCard> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text("₹${budgetForToday}",
+                  Text("₹${budgetForToday.abs()}",
                       style: TextStyle(
                         fontSize: 16,
-                        color: creditColor,
+                        color: (budgetForToday >= 0) ? creditColor : debitColor,
                         fontWeight: FontWeight.w500,
                       )),
-                  Text("left for today",
+                  Text((budgetForToday >= 0) ? "left for today" : "spent extra",
                       style: TextStyle(
                         fontSize: 13,
                         color: Color(0xFF3C3C3C),

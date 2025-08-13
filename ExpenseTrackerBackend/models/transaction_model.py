@@ -5,7 +5,7 @@ from app import mongo
 class transaction_model:
     def add_transaction_model(self,transaction_data):
         try:
-            transaction_data['date'] = datetime.now(timezone.utc)
+            transaction_data['date'] = dateutil.parser.parse(transaction_data['date'])
             transaction_data['amount'] = float(transaction_data['amount'])
             transaction=mongo.db.transactions.insert_one(transaction_data)
             update_value = transaction_data['amount'] if transaction_data['type'] == "credit" else -transaction_data['amount']
@@ -17,9 +17,8 @@ class transaction_model:
                 return {'message':"can't update total amount"}
             return {"message":'success','transaction_id':str(transaction.inserted_id)}
         except Exception as e:
-            print(f"error is {e}")
-            return {'message':f'wrong is e'}
-    
+            return {'message':f'wrong is {e}'}
+
     def get_monthly_transactions_model(self,input_data):
         try:
             start_date =dateutil.parser.parse(input_data['start_date'])
@@ -82,6 +81,71 @@ class transaction_model:
             return {'message':"success",'category_monthly_transactions':{"category_transactions":transactions,'date':input_data['start_date']}}
         except Exception as e:
             return {'message':str(e)}
+        
+
+    def get_budget_details_model(self,input_data):
+        try:
+            start_date = dateutil.parser.parse(input_data['start_date'])
+            end_date = dateutil.parser.parse(input_data['end_date'])
+            current_date=dateutil.parser.parse(input_data['current_date'])
+            user = mongo.db.users.find_one({'_id': ObjectId(input_data['user_id'])})
+            created_at = user.get('createdAt')
+            created_at=created_at.replace(tzinfo=timezone.utc)
+            if end_date < created_at:
+                return {'message': 'No more transactions available'}
+            temp=mongo.db.transactions.find_one({'date':current_date})
+            budget_details = list(mongo.db.transactions.aggregate([
+                {
+                    '$match': {
+                        'user_id': input_data['user_id']
+                    }
+                },
+                {
+                    '$group': {
+                        '_id': '$category_id',
+                        'total_cost': {
+                            '$sum': {
+                                '$cond': [
+                                    {
+                                        '$and': [
+                                            {'$gte': ['$date', start_date]},
+                                            {'$lt': ['$date', end_date]}
+                                        ]
+                                    },
+                                    {
+                                        '$cond': [
+                                            {'$eq': ['$type', 'credit']},
+                                            '$amount',
+                                            {'$multiply': ['$amount', -1]}
+                                        ]
+                                    },
+                                    0.0
+                                ]
+                            }
+                        },
+                        'current_day': {
+                            '$sum': {
+                                '$cond': [
+                                    {'$eq': ['$date', current_date]},
+                                    {
+                                        '$cond': [
+                                            {'$eq': ['$type', 'credit']},
+                                            '$amount',
+                                            {'$multiply': ['$amount', -1]}
+                                        ]
+                                    },
+                                    0.0
+                                ]
+                            }
+                        }
+                    }
+                }
+            ]))
+
+            return {'message':"success",'monthly_budget_details':{"budget_details":budget_details,'date':input_data['start_date']}}
+        except Exception as e:
+            return {'message':str(e)}
+        
     
     def get_recent_transactions_model(self,user_data):
         try:
@@ -128,6 +192,7 @@ class transaction_model:
                 return {"message":"Transaction not found"}
             amount=transaction['amount']
             type=transaction['type']
+            date = dateutil.parser.parse(transaction_data['date'])
             if type=="credit":
                 amount=-amount 
             if transaction_data['type']=='credit':
@@ -140,7 +205,7 @@ class transaction_model:
                 "amount": float(transaction_data["amount"]),
                 "type": transaction_data["type"],
                 "category_id": transaction_data["category_id"],
-                "date": datetime.now(timezone.utc)
+                "date": date
             }
             result = mongo.db.transactions.update_one(
                 {"_id": ObjectId(transaction_data['transaction_id']),"user_id":transaction_data['user_id']},
