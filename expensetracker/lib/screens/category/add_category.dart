@@ -36,12 +36,18 @@ class _AddCategoryState extends State<AddCategory> {
     if (widget.isEdit) {
       emojiController.text = widget.category.emoji;
       nameController.text = widget.category.categoryName;
-      budgetController.text = widget.category.budget.toString();
+      if (widget.category.budget != 0) {
+        budgetController.text = widget.category.budget.toString();
+      } else {
+        budgetController.text = "";
+      }
       _selectedOption = (widget.category.type == "Daily")
           ? ExpenseType.option1
           : (widget.category.type == "Weekly")
               ? ExpenseType.option2
-              : ExpenseType.option3;
+              : (widget.category.type == "Monthly")
+                  ? ExpenseType.option3
+                  : null;
     }
     if (mounted) {
       setState(() {
@@ -205,12 +211,12 @@ class _AddCategoryState extends State<AddCategory> {
                               Expanded(
                                 child: TextFormField(
                                   onChanged: (value) {
-                                    if (budgetError.length != 0) {
-                                      if (mounted)
-                                        setState(() {
-                                          budgetError = "";
-                                        });
-                                    }
+                                    // if (budgetError.length != 0) {
+                                    //   if (mounted)
+                                    //     setState(() {
+                                    //       budgetError = "";
+                                    //     });
+                                    // }
                                   },
                                   controller: budgetController,
                                   focusNode: budgetFocus,
@@ -221,7 +227,7 @@ class _AddCategoryState extends State<AddCategory> {
                                     LengthLimitingTextInputFormatter(7)
                                   ],
                                   decoration: InputDecoration(
-                                    hintText: "Monthly budget",
+                                    hintText: "Monthly budget (opt)",
                                     hintStyle: TextStyle(color: Colors.grey),
                                     border: InputBorder.none,
                                   ),
@@ -230,11 +236,11 @@ class _AddCategoryState extends State<AddCategory> {
                             ],
                           ),
                         ),
-                        ErrorText(budgetError),
+                        // ErrorText(budgetError),
                         SizedBox(height: 20),
                         (_selectedOption == null)
                             ? Text(
-                                "Select Expense Type",
+                                "Select Expense Type (opt)",
                                 style: TextStyle(
                                   fontSize: 16,
                                   color: Colors.grey,
@@ -244,7 +250,7 @@ class _AddCategoryState extends State<AddCategory> {
                             : SizedBox.shrink(),
                         SizedBox(height: 10),
                         Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: <Widget>[
                               Row(
                                 children: [
@@ -256,12 +262,12 @@ class _AddCategoryState extends State<AddCategory> {
                                         setState(() {
                                           _selectedOption = value;
                                         });
-                                      if (typeError.length > 0) {
-                                        if (mounted)
-                                          setState(() {
-                                            typeError = "";
-                                          });
-                                      }
+                                      // if (typeError.length > 0) {
+                                      //   if (mounted)
+                                      //     setState(() {
+                                      //       typeError = "";
+                                      //     });
+                                      // }
                                     },
                                   ),
                                   Text("Daily",
@@ -282,12 +288,12 @@ class _AddCategoryState extends State<AddCategory> {
                                         setState(() {
                                           _selectedOption = value;
                                         });
-                                      if (typeError.length > 0) {
-                                        if (mounted)
-                                          setState(() {
-                                            typeError = "";
-                                          });
-                                      }
+                                      // if (typeError.length > 0) {
+                                      //   if (mounted)
+                                      //     setState(() {
+                                      //       typeError = "";
+                                      //     });
+                                      // }
                                     },
                                   ),
                                   Text("Weekly",
@@ -308,12 +314,12 @@ class _AddCategoryState extends State<AddCategory> {
                                         setState(() {
                                           _selectedOption = value;
                                         });
-                                      if (typeError.length > 0) {
-                                        if (mounted)
-                                          setState(() {
-                                            typeError = "";
-                                          });
-                                      }
+                                      // if (typeError.length > 0) {
+                                      //   if (mounted)
+                                      //     setState(() {
+                                      //       typeError = "";
+                                      //     });
+                                      // }
                                     },
                                   ),
                                   Text("Monthly",
@@ -348,21 +354,21 @@ class _AddCategoryState extends State<AddCategory> {
                                       });
                                     return;
                                   }
-                                  if (budgetController.text.trim().length ==
-                                      0) {
-                                    if (mounted)
-                                      setState(() {
-                                        budgetError = "Enter budget";
-                                      });
-                                    return;
-                                  }
-                                  if (_selectedOption == null) {
-                                    if (mounted)
-                                      setState(() {
-                                        typeError = "Select type";
-                                      });
-                                    return;
-                                  }
+                                  // if (budgetController.text.trim().length ==
+                                  //     0) {
+                                  //   if (mounted)
+                                  //     setState(() {
+                                  //       budgetError = "Enter budget";
+                                  //     });
+                                  //   return;
+                                  // }
+                                  // if (_selectedOption == null) {
+                                  //   if (mounted)
+                                  //     setState(() {
+                                  //       typeError = "Select type";
+                                  //     });
+                                  //   return;
+                                  // }
                                   if (mounted)
                                     setState(() {
                                       isLoading = true;
@@ -378,7 +384,10 @@ class _AddCategoryState extends State<AddCategory> {
                                             : (_selectedOption ==
                                                     ExpenseType.option2)
                                                 ? "Weekly"
-                                                : "Monthly",
+                                                : (_selectedOption ==
+                                                        ExpenseType.option3)
+                                                    ? "Monthly"
+                                                    : "NA",
                                         budgetController.text.isEmpty
                                             ? 0.0
                                             : double.parse(
@@ -398,7 +407,10 @@ class _AddCategoryState extends State<AddCategory> {
                                             : (_selectedOption ==
                                                     ExpenseType.option2)
                                                 ? "Weekly"
-                                                : "Monthly");
+                                                : (_selectedOption ==
+                                                        ExpenseType.option3)
+                                                    ? "Monthly"
+                                                    : "NA");
                                   }
                                   if (mounted)
                                     setState(() {

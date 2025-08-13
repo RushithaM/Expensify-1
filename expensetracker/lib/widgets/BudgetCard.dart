@@ -37,19 +37,22 @@ class _CategoryAnalysisCardState extends State<BudgetCard> {
 
   calculateBudgetLeftPerDay() {
     budgetSpentToday = widget.currentDayBudget;
-    budgetLeftPerDay = double.parse(
-      ((widget.category.budget - (-widget.budget + widget.currentDayBudget)) /
-              getRemainingDaysInMonth(
-                  widget.date.year, widget.date.month, widget.date.day))
-          .toStringAsFixed(2),
-    );
+    if (widget.category.type == "Daily") {
+      budgetLeftPerDay = double.parse(
+        ((widget.category.budget - (-widget.budget + widget.currentDayBudget)) /
+                getRemainingDaysInMonth(
+                    widget.date.year, widget.date.month, widget.date.day))
+            .toStringAsFixed(2),
+      );
+    } else if (widget.category.type == "Weekly") {
+      budgetLeftPerDay = double.parse(
+        ((widget.category.budget - (-widget.budget + widget.currentDayBudget)) /
+                getTotalSundaysLeft(widget.date))
+            .toStringAsFixed(2),
+      );
+    }
     budgetForToday =
         double.parse((budgetLeftPerDay + budgetSpentToday).toStringAsFixed(2));
-    if (widget.category.categoryName == "Food") {
-      print(budgetForToday);
-      print(budgetLeftPerDay);
-      print(budgetSpentToday);
-    }
   }
 
   // calculateBudgetLeft() {
@@ -167,7 +170,11 @@ class _CategoryAnalysisCardState extends State<BudgetCard> {
                         color: (budgetForToday >= 0) ? creditColor : debitColor,
                         fontWeight: FontWeight.w500,
                       )),
-                  Text((budgetForToday >= 0) ? "left for today" : "spent extra",
+                  Text(
+                      (budgetForToday >= 0)
+                          ? "left for " +
+                              "${(widget.category.type == "Daily") ? "today" : (widget.category.type == "Weekly") ? "week" : "month"}"
+                          : "spent extra",
                       style: TextStyle(
                         fontSize: 13,
                         color: Color(0xFF3C3C3C),

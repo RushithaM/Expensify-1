@@ -123,6 +123,19 @@ int getRemainingDaysInMonth(int year, int month, int day) {
   return nextMonth.difference(today).inDays;
 }
 
+int getTotalSundaysLeft(DateTime today) {
+  DateTime endOfMonth = DateTime(today.year, today.month + 1, 0);
+  int count = 0;
+  for (DateTime date = DateTime(today.year, today.month, today.day);
+      !date.isAfter(endOfMonth);
+      date = date.add(Duration(days: 1))) {
+    if (date.weekday == DateTime.sunday) {
+      count++;
+    }
+  }
+  return count;
+}
+
 CategoryProvider catPro = CategoryProvider();
 TransactionsProvider transPro = TransactionsProvider();
 UserProvider userPro = UserProvider();

@@ -69,7 +69,9 @@ class _CategoryCardState extends State<CategoryCard> {
                             ),
                           ),
                           Text(
-                            "₹${widget.category.budget.toString()}",
+                            (widget.category.budget == 0)
+                                ? "NA"
+                                : "₹${widget.category.budget.toString()}",
                             style: TextStyle(
                               fontSize: 14,
                               color: appColor,

@@ -3,7 +3,6 @@ import 'package:expensetracker/providers/globals.dart';
 import 'package:expensetracker/styles/styles.dart';
 import 'package:expensetracker/widgets/BudgetCard.dart';
 import 'package:expensetracker/widgets/MonthAmountBudgetCard.dart';
-import 'package:expensetracker/widgets/monthAmountCard.dart';
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 
@@ -183,29 +182,49 @@ class _CalendarPageState extends State<CalendarPage> {
                                 amount: 200),
                             SizedBox(height: 10),
                             for (int j = 0; j < catPro.categories.length; j++)
-                              BudgetCard(
-                                category: catPro.categories[j],
-                                budget: transPro
-                                    .monthlyBudgetDetails[i].budgetDetails
-                                    .firstWhere(
-                                      (budget) =>
-                                          budget.id == catPro.categories[j].id,
-                                      orElse: () => BudgetDetail(
-                                          id: '', totalCost: 0, currentDay: 0),
-                                    )
-                                    .totalCost,
-                                currentDayBudget: transPro
-                                    .monthlyBudgetDetails[i].budgetDetails
-                                    .firstWhere(
-                                      (budget) =>
-                                          budget.id == catPro.categories[j].id,
-                                      orElse: () => BudgetDetail(
-                                          id: '', totalCost: 0, currentDay: 0),
-                                    )
-                                    .currentDay,
-                                date: DateTime(DateTime.now().year,
-                                    DateTime.now().month, DateTime.now().day),
-                              ),
+                              if (catPro.categories[j].budget != 0 &&
+                                  catPro.categories[j].type != "NA" &&
+                                  transPro.monthlyBudgetDetails[i].budgetDetails
+                                          .firstWhere(
+                                            (budget) =>
+                                                budget.id ==
+                                                catPro.categories[j].id,
+                                            orElse: () => BudgetDetail(
+                                                id: '',
+                                                totalCost: 0,
+                                                currentDay: 0),
+                                          )
+                                          .totalCost <=
+                                      0)
+                                BudgetCard(
+                                  category: catPro.categories[j],
+                                  budget: transPro
+                                      .monthlyBudgetDetails[i].budgetDetails
+                                      .firstWhere(
+                                        (budget) =>
+                                            budget.id ==
+                                            catPro.categories[j].id,
+                                        orElse: () => BudgetDetail(
+                                            id: '',
+                                            totalCost: 0,
+                                            currentDay: 0),
+                                      )
+                                      .totalCost,
+                                  currentDayBudget: transPro
+                                      .monthlyBudgetDetails[i].budgetDetails
+                                      .firstWhere(
+                                        (budget) =>
+                                            budget.id ==
+                                            catPro.categories[j].id,
+                                        orElse: () => BudgetDetail(
+                                            id: '',
+                                            totalCost: 0,
+                                            currentDay: 0),
+                                      )
+                                      .currentDay,
+                                  date: DateTime(DateTime.now().year,
+                                      DateTime.now().month, DateTime.now().day),
+                                ),
                             SizedBox(height: 7),
                           ],
                         ),

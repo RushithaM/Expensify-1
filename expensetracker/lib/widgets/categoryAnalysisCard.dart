@@ -1,3 +1,4 @@
+import 'package:expensetracker/models/category_model.dart';
 import 'package:expensetracker/models/category_monthly_transactions_model.dart';
 import 'package:expensetracker/providers/globals.dart';
 import 'package:expensetracker/styles/styles.dart';
@@ -22,9 +23,13 @@ class CategoryAnalysisCard extends StatefulWidget {
 class _CategoryAnalysisCardState extends State<CategoryAnalysisCard> {
   double creditPercent = 0.0;
   double debitPercent = 0.0;
+
+  Category category = emptyCategory;
   @override
   void initState() {
     super.initState();
+    category = catPro.categories
+        .firstWhere((cat) => cat.id == widget.categoryTransaction.id);
     creditPercent = (widget.categoryTransaction.totalCost >= 0)
         ? (widget.categoryTransaction.totalCost * 100) / widget.creditCost
         : 0.0;
@@ -37,6 +42,8 @@ class _CategoryAnalysisCardState extends State<CategoryAnalysisCard> {
     if (widget.debitCost == 0.0) {
       debitPercent = 0.0;
     }
+    print(category.budget);
+    print(widget.categoryTransaction.totalCost);
   }
 
   @override
@@ -64,14 +71,7 @@ class _CategoryAnalysisCardState extends State<CategoryAnalysisCard> {
                       color: lightColor,
                       borderRadius: BorderRadius.circular(16),
                     ),
-                    child: Text(
-                        catPro.categories
-                            .firstWhere(
-                                (category) =>
-                                    category.id ==
-                                    widget.categoryTransaction.id,
-                                orElse: () => emptyCategory)
-                            .emoji,
+                    child: Text(category.emoji,
                         style: TextStyle(
                           fontSize: 30,
                         )),
@@ -81,21 +81,18 @@ class _CategoryAnalysisCardState extends State<CategoryAnalysisCard> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                          catPro.categories
-                              .firstWhere(
-                                  (category) =>
-                                      category.id ==
-                                      widget.categoryTransaction.id,
-                                  orElse: () => emptyCategory)
-                              .categoryName,
+                      Text(category.categoryName,
                           style: TextStyle(
                             fontSize: 16,
                             color: Color(0xFF3C3C3C),
                             fontWeight: FontWeight.w500,
                           )),
                       Text(
-                          "${double.parse((widget.categoryTransaction.totalCost < 0) ? (debitPercent).toStringAsFixed(2) : creditPercent.toStringAsFixed(2))}% of ${(widget.categoryTransaction.totalCost < 0) ? "debit" : "credit"}",
+                          (category.budget == 0 ||
+                                  widget.categoryTransaction.totalCost > 0)
+                              ? "NA"
+                              : "₹${(category.budget + widget.categoryTransaction.totalCost).abs()} " +
+                                  "${((category.budget + widget.categoryTransaction.totalCost) < 0) ? "spent extra" : "left"}",
                           style: TextStyle(
                             fontSize: 13,
                             color: Color(0xFF3C3C3C),

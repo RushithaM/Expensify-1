@@ -236,6 +236,7 @@ class TransactionsProvider {
     try {
       final response = await http.post(url, headers: headers, body: body);
       final resp = jsonDecode(response.body);
+      print(resp);
       if (resp['message'] == "success") {
         MonthlyBudgetDetails monthlyBudgetDetails =
             MonthlyBudgetDetailsModel.fromJson(resp).monthlyBudgetDetails;
