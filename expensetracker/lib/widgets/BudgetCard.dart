@@ -27,32 +27,36 @@ class _CategoryAnalysisCardState extends State<BudgetCard> {
 
   double budgetSpentToday = 0;
   double budgetForToday = 0;
-  double budgetLeftPerDay = 0;
+  double budgetLeftPerType = 0;
 
   @override
   void initState() {
     super.initState();
-    calculateBudgetLeftPerDay();
+    calculateBudgetLeft();
   }
 
-  calculateBudgetLeftPerDay() {
+  calculateBudgetLeft() {
     budgetSpentToday = widget.currentDayBudget;
     if (widget.category.type == "Daily") {
-      budgetLeftPerDay = double.parse(
+      budgetLeftPerType = double.parse(
         ((widget.category.budget - (-widget.budget + widget.currentDayBudget)) /
                 getRemainingDaysInMonth(
                     widget.date.year, widget.date.month, widget.date.day))
             .toStringAsFixed(2),
       );
     } else if (widget.category.type == "Weekly") {
-      budgetLeftPerDay = double.parse(
+      budgetLeftPerType = double.parse(
         ((widget.category.budget - (-widget.budget + widget.currentDayBudget)) /
                 getTotalSundaysLeft(widget.date))
             .toStringAsFixed(2),
       );
+    } else if (widget.category.type == "Monthly") {
+      budgetLeftPerType = double.parse(
+          (widget.category.budget - (-widget.budget + widget.currentDayBudget))
+              .toStringAsFixed(2));
     }
     budgetForToday =
-        double.parse((budgetLeftPerDay + budgetSpentToday).toStringAsFixed(2));
+        double.parse((budgetLeftPerType + budgetSpentToday).toStringAsFixed(2));
   }
 
   // calculateBudgetLeft() {
