@@ -20,7 +20,15 @@ def get_category_monthly_transactions_controller():
 def get_recent_transactions_controller():
     return obj.get_recent_transactions_model(request.get_json())
 
-@app.route('/transactions/edit_transaction',methods=['POST'])
+@app.route('/transactions/get_budget_details',methods=["POST"])
+def get_budget_details_controller():
+    return obj.get_budget_details_model(request.get_json())
+
+@app.route('/transactions/get_daily_transactions',methods=["POST"])
+def get_daily_transactions_controller():
+    return obj.get_daily_transactions_model(request.get_json())
+
+@app.route('/transactions/edit_transaction',methods=["POST"])
 def edit_transaction_controller():
     return obj.edit_transaction_model(request.get_json())
 

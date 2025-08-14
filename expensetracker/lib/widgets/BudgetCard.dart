@@ -10,12 +10,14 @@ class BudgetCard extends StatefulWidget {
       required this.category,
       required this.budget,
       required this.currentDayBudget,
-      required this.date});
+      required this.date,
+      this.showDailySpending = false});
 
   double budget;
   double currentDayBudget;
   Category category;
   DateTime date;
+  bool showDailySpending;
 
   @override
   State<BudgetCard> createState() => _CategoryAnalysisCardState();
@@ -154,12 +156,14 @@ class _CategoryAnalysisCardState extends State<BudgetCard> {
                             color: Color(0xFF3C3C3C),
                             fontWeight: FontWeight.w500,
                           )),
-                      Text("₹${budgetSpentToday.abs()} spent today",
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Color(0xFF3C3C3C),
-                            fontWeight: FontWeight.w400,
-                          )),
+                          Text(widget.showDailySpending 
+                           ? "₹${widget.currentDayBudget.abs()} spent today"
+                           : "₹${budgetSpentToday.abs()} spent today",
+                           style: TextStyle(
+                             fontSize: 13,
+                             color: Color(0xFF3C3C3C),
+                             fontWeight: FontWeight.w400,
+                           )),
                     ],
                   ),
                 ],
@@ -168,17 +172,21 @@ class _CategoryAnalysisCardState extends State<BudgetCard> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text("₹${budgetForToday.abs()}",
+                  Text("₹${widget.showDailySpending ? widget.currentDayBudget.abs() : budgetForToday.abs()}",
                       style: TextStyle(
                         fontSize: 16,
-                        color: (budgetForToday >= 0) ? creditColor : debitColor,
+                        color: widget.showDailySpending 
+                            ? (widget.currentDayBudget > 0 ? debitColor : Colors.grey)
+                            : (budgetForToday >= 0) ? creditColor : debitColor,
                         fontWeight: FontWeight.w500,
                       )),
                   Text(
-                      (budgetForToday >= 0)
-                          ? "left for " +
-                              "${(widget.category.type == "Daily") ? "today" : (widget.category.type == "Weekly") ? "week" : "month"}"
-                          : "spent extra",
+                      widget.showDailySpending
+                          ? ""
+                          : (budgetForToday >= 0)
+                              ? "left for " +
+                                  "${(widget.category.type == "Daily") ? "today" : (widget.category.type == "Weekly") ? "week" : "month"}"
+                              : "spent extra",
                       style: TextStyle(
                         fontSize: 13,
                         color: Color(0xFF3C3C3C),
