@@ -16,6 +16,8 @@ class CalendarPage extends StatefulWidget {
 class _CalendarPageState extends State<CalendarPage> {
   DateTime? _selectedDay;
   DateTime _focusedDay = DateTime.now();
+  Map<String, dynamic>? _selectedDayData;
+  bool _isLoadingDailyData = false;
 
   @override
   void initState() {
@@ -62,6 +64,64 @@ class _CalendarPageState extends State<CalendarPage> {
       setState(() {
         isLoading = false;
       });
+  }
+
+  bool _isFutureDate(DateTime date) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final selectedDate = DateTime(date.year, date.month, date.day);
+    return selectedDate.isAfter(today);
+  }
+
+  bool _isPastDate(DateTime date) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final selectedDate = DateTime(date.year, date.month, date.day);
+    return selectedDate.isBefore(today);
+  }
+
+  double _getDailySpendingForCategory(String categoryId) {
+    if (_selectedDayData == null) return 0.0;
+    
+    final categoryTotals = _selectedDayData!['category_totals'] as Map<String, dynamic>;
+    if (categoryTotals.containsKey(categoryId)) {
+      final data = categoryTotals[categoryId] as Map<String, dynamic>;
+      final debit = data['debit'] as double;
+      final credit = data['credit'] as double;
+      return debit - credit;
+    }
+    return 0.0;
+  }
+
+  Future<void> _loadDailyTransactions(DateTime date) async {
+    setState(() {
+      _isLoadingDailyData = true;
+    });
+
+    try {
+      final response = await transPro.getDailyTransactions(
+        prefs!.getString('id')!,
+        date,
+      );
+
+      if (mounted) {
+        setState(() {
+          if (response['message'] == 'success') {
+            _selectedDayData = response;
+          } else {
+            _selectedDayData = null;
+          }
+          _isLoadingDailyData = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _selectedDayData = null;
+          _isLoadingDailyData = false;
+        });
+      }
+    }
   }
 
   @override
@@ -114,39 +174,21 @@ class _CalendarPageState extends State<CalendarPage> {
                       _selectedDay = selectedDay;
                       _focusedDay = focusedDay;
                     });
+                    if (_isPastDate(selectedDay)) {
+                      _loadDailyTransactions(selectedDay);
+                    } else {
+                      setState(() {
+                        _selectedDayData = null;
+                      });
+                    }
                   },
                   onPageChanged: (focusedDay) {
                     setState(() {
                       _focusedDay = focusedDay;
+                      _selectedDay = null;
+                      _selectedDayData = null;
                     });
                   },
-                  calendarBuilders: CalendarBuilders(
-                    defaultBuilder: (context, day, focusedDay) {
-                      final startDate = DateTime.parse(createdAtDateString!);
-                      final now = DateTime.now();
-                      final today = DateTime(now.year, now.month, now.day);
-                      final normalizedDay =
-                          DateTime(day.year, day.month, day.day);
-                      if ((normalizedDay.isAfter(startDate) ||
-                              normalizedDay.isAtSameMomentAs(startDate)) &&
-                          (normalizedDay.isBefore(today) ||
-                              normalizedDay.isAtSameMomentAs(today))) {
-                        return Container(
-                          margin: const EdgeInsets.all(6.0),
-                          decoration: const BoxDecoration(
-                            color: Colors.green,
-                            shape: BoxShape.circle,
-                          ),
-                          alignment: Alignment.center,
-                          child: Text(
-                            '${day.day}',
-                            style: const TextStyle(color: Colors.white),
-                          ),
-                        );
-                      }
-                      return null;
-                    },
-                  ),
                   calendarStyle: CalendarStyle(
                     todayDecoration: BoxDecoration(
                       color: appColor.withOpacity(0.5),
@@ -178,13 +220,33 @@ class _CalendarPageState extends State<CalendarPage> {
                         Column(
                           children: [
                             MonthAmountBudgetCard(
-                                date: transPro.monthlyBudgetDetails[i].date,
-                                amount: 200),
+                                date: _selectedDay ?? transPro.monthlyBudgetDetails[i].date,
+                                amount: _selectedDay != null && _selectedDayData != null ? 0 : 200),
                             SizedBox(height: 10),
-                            for (int j = 0; j < catPro.categories.length; j++)
-                              if (catPro.categories[j].budget != 0 &&
-                                  catPro.categories[j].type != "NA" &&
-                                  transPro.monthlyBudgetDetails[i].budgetDetails
+                                                         for (int j = 0; j < catPro.categories.length; j++)
+                               if (catPro.categories[j].active == true &&
+                                   catPro.categories[j].budget != 0 &&
+                                   catPro.categories[j].type != "NA" &&
+                                   (_selectedDay != null && _selectedDayData != null
+                                       ? _getDailySpendingForCategory(catPro.categories[j].id) > 0  // Only show if daily spending > 0
+                                       : transPro.monthlyBudgetDetails[i].budgetDetails
+                                           .firstWhere(
+                                             (budget) =>
+                                                 budget.id ==
+                                                 catPro.categories[j].id,
+                                             orElse: () => BudgetDetail(
+                                                 id: '',
+                                                 totalCost: 0,
+                                                 currentDay: 0),
+                                           )
+                                           .totalCost <=
+                                       0))
+                                BudgetCard(
+                                  category: catPro.categories[j],
+                                  budget: _selectedDay != null && _selectedDayData != null
+                                      ? _getDailySpendingForCategory(catPro.categories[j].id)  // Show daily spending as main amount
+                                      : transPro
+                                          .monthlyBudgetDetails[i].budgetDetails
                                           .firstWhere(
                                             (budget) =>
                                                 budget.id ==
@@ -194,36 +256,24 @@ class _CalendarPageState extends State<CalendarPage> {
                                                 totalCost: 0,
                                                 currentDay: 0),
                                           )
-                                          .totalCost <=
-                                      0)
-                                BudgetCard(
-                                  category: catPro.categories[j],
-                                  budget: transPro
-                                      .monthlyBudgetDetails[i].budgetDetails
-                                      .firstWhere(
-                                        (budget) =>
-                                            budget.id ==
-                                            catPro.categories[j].id,
-                                        orElse: () => BudgetDetail(
-                                            id: '',
-                                            totalCost: 0,
-                                            currentDay: 0),
-                                      )
-                                      .totalCost,
-                                  currentDayBudget: transPro
-                                      .monthlyBudgetDetails[i].budgetDetails
-                                      .firstWhere(
-                                        (budget) =>
-                                            budget.id ==
-                                            catPro.categories[j].id,
-                                        orElse: () => BudgetDetail(
-                                            id: '',
-                                            totalCost: 0,
-                                            currentDay: 0),
-                                      )
-                                      .currentDay,
-                                  date: DateTime(DateTime.now().year,
+                                          .totalCost,
+                                  currentDayBudget: _selectedDay != null && _selectedDayData != null
+                                      ? _getDailySpendingForCategory(catPro.categories[j].id)
+                                      : transPro
+                                          .monthlyBudgetDetails[i].budgetDetails
+                                          .firstWhere(
+                                            (budget) =>
+                                                budget.id ==
+                                                catPro.categories[j].id,
+                                            orElse: () => BudgetDetail(
+                                                id: '',
+                                                totalCost: 0,
+                                                currentDay: 0),
+                                          )
+                                          .currentDay,
+                                  date: _selectedDay ?? DateTime(DateTime.now().year,
                                       DateTime.now().month, DateTime.now().day),
+                                  showDailySpending: _selectedDay != null && _selectedDayData != null,
                                 ),
                             SizedBox(height: 7),
                           ],

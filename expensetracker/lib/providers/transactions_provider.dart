@@ -256,6 +256,25 @@ class TransactionsProvider {
     }
   }
 
+  Future<Map<String, dynamic>> getDailyTransactions(String user_id, DateTime date) async {
+    final url = Uri.parse('${bUrl}/transactions/get_daily_transactions');
+    final body = jsonEncode({
+      "user_id": user_id,
+      'date': generateDate(date.year, date.month, date.day),
+    });
+    try {
+      final response = await http.post(url, headers: headers, body: body);
+      final resp = jsonDecode(response.body);
+      if (resp['message'] == "success") {
+        return resp;
+      } else {
+        return {'message': resp['message']};
+      }
+    } catch (e) {
+      return {'error': 'Something went wrong: $e', 'message': 'not ok'};
+    }
+  }
+
   Future<Map<String, dynamic>> deleteTransaction(
       Transaction transaction, int i, int j, DateTime date) async {
     final url = Uri.parse('${bUrl}/transactions/delete_transaction');
